@@ -37,13 +37,33 @@ View
 + Client 요청을 받아 Client에게 응답할 때까지의 처리를 담당 -> Client가 요청한 작업을 처리하는 흐름(Work flow) 담당
 + 1개의 HTTP 요청에 대하여 1개의 View가 실행되어 요청된 작업 처리
   + urls.py에 사용자가 View를 요청할 URL을 mapping
-    + path(요청 URL, View 함수, name='이름')
+    + path(요청 URL, View 함수, name='설정 이름')
+    + path(요청 URL/<타입:이름>, view 함수, name='설정 이름')
 + 구현 방식은 함수기반 방식(FBV)와 클래스기반 방식(CBV)
   + app 내의 views.py에 작성
   + 함수 기반 View
+    + def 함수이름(request [, path parameter 변수]):
   + 클래스 기반 View
-+ template 호출
-## T
++ template 호출 : 처리 결과 응답
+  + render(request, template 파일, template 파일로 전달할 값(dict)) # request 반드시 선언해야 하는 매개변수
+  + View에서 DB의 값을 변경한 경우 새로 고침하면 다시 적용되는 문제가 있다 
+    + redirect()를 통해 DB의 처리(update/insert)와 응답하는 것 분리해야 함 
+ 
+# T
 Template
 + Client에게 보여지는 부분(응답화면)의 처리를 담당
 + HTML로 변환
++ templates/app이름 폴더 생성한 후 template 파일 생성
++ template 파일 : HTML(정적 작업) + django template 문법(동적 작업) 사용하여 만든 html
++ template 문법
+  + 주석(comment)
+    + {# 한 줄 주석 #}
+    + {% comment %}
+      주석 내용
+      {% endcomment %}
+    + html 주석 <!----> 
+    
+  + template 변수
+    {{변수}}
+  + template 필터
+    {{변수 | 필터}}
