@@ -19,6 +19,8 @@ Model
     ```
   + admin 페이지에서 Model 관리하고 싶다면 admin.py에 Model 클래스 등록
     ```python
+    # app이름/admin.py
+    from .models import Model_클래스
     admin.site.register(Model_클래스)
     ```
 + Model 클래스를 이용한 데이터 CRUD
@@ -42,12 +44,59 @@ View
 + 구현 방식은 함수기반 방식(FBV)와 클래스기반 방식(CBV)
   + app 내의 views.py에 작성
   + 함수 기반 View
-    + def 함수이름(request [, path parameter 변수]):
+    ```python
+    # app이름/urls.py
+    from django.urls import path
+    from . import views
+    
+    urlpatterns = [path('요청 url', views.View함수, name='설정이름')]
+    ```
+    
+    ```python
+    # app이름/views.py
+    from django.shortcuts import render
+    
+    def View함수(request [, path parameter 변수]): # HttpRequest 객체를 받는 request 변수 반드시 선언
+      #
+      # 사용자 요청 처리
+      #
+      return render(request, template 파일, template 파일로 전달할 값(dict))
+    ```
   + 클래스 기반 View
+    ```python
+    # app명/urls.py
+    # 1. class 기반 view 구현시 class 변수를 이용하여 속성만 설정한 경우
+    from . import views
+    
+    # 2. class를 직접 구현하지 않고 url 매핑 시 GenericView.as_view()의 매개변수 설정
+    from django.views.generic import ListView, DetailView, ...
+    from .models import Model클래스
+    
+    urlpatterns = [
+    # as_view() : View 객체 생성 및 dispatch() 메소드(HTTP 요청 방식에 맞는 처리 메소드 찾아 호출) 호출
+
+    # 1. class 기반 view 구현시 class 변수를 이용하여 속성만 설정한 경우
+    path('요청 url', views.View함수.as_view(), name='설정이름'),
+
+    # 2. class를 직접 구현하지 않고 url 매핑 시 GenericView.as_view()의 매개변수 설정
+    path('요청 url', ListView.as_view(model = Model클래스, template='template 파일'), name='설정이름'),
+    ]
+    ```
+    
+    ```python
+    # app이름/views.py
+    from django.views.generic import ListView, DetailView, ...
+    
+    # 1. class 기반 view 구현시 class 변수를 이용하여 속성만 설정한 경우
+    class View함수(상속받을 Generic View):
+      model = Model클래스 # 조회할 모델(테이블)
+      template_name = 'template 파일' # 조회 결과를 template에 전달하며 호출
+      # 조회 결과를 template에 전달 
+    ```
 + template 호출 : 처리 결과 응답
   + render(request, template 파일, template 파일로 전달할 값(dict)) # request 반드시 선언해야 하는 매개변수
   + View에서 DB의 값을 변경한 경우 새로 고침하면 다시 적용되는 문제가 있다 
-    + redirect()를 통해 DB의 처리(update/insert)와 응답하는 것 분리해야 함 
+    + #### redirect()를 통해 DB의 처리(update/insert)와 응답하는 것 분리해야 함 ####
  
 # T
 Template
