@@ -12,7 +12,7 @@ Model
       |클래스 변수|컬럼|
       |객체|행(데이터 1개)|
   + models.py에 Model 클래스 작성 (django.db.models.Model 상속, 테이블 이름 : app이름_class이름)
-  + Model 클래스 작성 후 DB에 테이블 생성
+  + Model 클래스 작성 후 DB에 테이블 생성 또는 Model 클래스 수정 후 변경사항 갱신
     ```cmd
     python manage.py makemigrations # 변경 사항 DB에 넣기 위한 내역을 가진 migration 파일 생성
     python manage.py migrate # DB에 적용
@@ -39,8 +39,6 @@ View
 + Client 요청을 받아 Client에게 응답할 때까지의 처리를 담당 -> Client가 요청한 작업을 처리하는 흐름(Work flow) 담당
 + 1개의 HTTP 요청에 대하여 1개의 View가 실행되어 요청된 작업 처리
   + urls.py에 사용자가 View를 요청할 URL을 mapping
-    + path(요청 URL, View 함수, name='설정 이름')
-    + path(요청 URL/<타입:이름>, view 함수, name='설정 이름')
 + 구현 방식은 함수기반 방식(FBV)와 클래스기반 방식(CBV)
   + app 내의 views.py에 작성
   + 함수 기반 View
@@ -49,7 +47,7 @@ View
     from django.urls import path
     from . import views
     
-    urlpatterns = [path('요청 url', views.View함수, name='설정이름')]
+    urlpatterns = [path('요청 url 또는 요청 url/<타입"이름>', views.View함수, name='설정이름')]
     ```
     
     ```python
@@ -95,9 +93,18 @@ View
     ```
 + template 호출 : 처리 결과 응답
   + render(request, template 파일, template 파일로 전달할 값(dict)) # request 반드시 선언해야 하는 매개변수
-  + View에서 DB의 값을 변경한 경우 새로 고침하면 다시 적용되는 문제가 있다 
-    + #### redirect()를 통해 DB의 처리(update/insert)와 응답하는 것 분리해야 함 ####
- 
+  + View에서 DB의 값을 변경한 후 template을 render()로 호출하면 처리결과를 전달할 수 있기에 새로 고침하면 다시 적용되는 문제 발생
+    + #### redirect()를 통해 DB의 처리(update/insert)와 응답하는 것의 처리 분리해야 함 ####
+    ```python
+    from django.shortcuts import redirect
+    from django.urls import reverse # View에서 urls.py의 path 설정 이름을 이용해 url을 조회.
+
+    # 함수 또는 클래스 내부 함수
+    # redirect() 함수를 이용해 응답처리 View를 웹브라우저가 다시 요청하도록 설정.
+
+    url_str = reverse("app이름:응답처리_설정이름", args=[path parameter값]) #args: path parameter값 등록
+    return redirect(url_str)
+    ```
 # T
 Template
 + Client에게 보여지는 부분(응답화면)의 처리를 담당
