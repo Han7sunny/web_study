@@ -112,14 +112,60 @@ Template
 + templates/app이름 폴더 생성한 후 template 파일 생성
 + template 파일 : HTML(정적 작업) + django template 문법(동적 작업) 사용하여 만든 html
 + template 문법
-  + 주석(comment)
-    + {# 한 줄 주석 #}
-    + {% comment %}
-      주석 내용
-      {% endcomment %}
-    + html 주석 <!----> 
+  ```python
+  # 주석(comment)
+  {# 한 줄 주석 #}
+  
+  {% comment %}
+    #주석 내용
+  {% endcomment %}
+  
+  <!-- html주석, 소스 코드에 노출됨 --> 
+  
+  # template 변수
+  {{변수}}
+  
+  # template 필터
+  {{변수 | 필터}}
+  
+  # template 태그
+  {% 태그 %}
+  
+  # 반복문
+  {% for 변수 in iterable %}
+    # 반복 구문
+  {% empty%} # 반복 조회할 iterable 원소가 없을 때
+  {% endfor %}
+  
+  # 조건문
+  {% if 조건%}
+  {% elif 조건 %}
+  {% else %}
+  {% endif %}
+  
+  # URL
+  # urls.py에 등록된 URL을 가져와 URL 생성
+  {%url 'app이름:url설정이름' 전달값 %}
+  
+  # extends
+  # 상속 받을 부모 template 지정(기존 template을 상속 받아 재사용)
+  {% extends '상속받을 template 경로' %}
+  
+  # block
+  # 재정의할 구역 지정
+ 
+  # 부모 template
+  {% block block이름 %}
+    # 자식 template에서 재정의할 영역 지정해줌
+  {% endblock block이름%}
+  
+  # 자식 template
+  {% block block이름 %}
+    # 재정의
+  {% endblock block이름%}  
+  
+  ```
+  
     
-  + template 변수
-    {{변수}}
-  + template 필터
-    {{변수 | 필터}}
+  
+  
