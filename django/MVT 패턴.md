@@ -4,6 +4,7 @@
 Model
 + 데이터베이스의 데이터를 다룬다.
 + ORM(Object Relational Mapping : 객체 관계 매핑)을 이용하여 SQL문 없이 CRUD 작업을 처리
+  + django ORM이 지원하는 DBMS : mysql, oracle, postgresql, sqlite3 
   + 객체와 관계형 데이터베이스의 데이터를 자동으로 연결         
                     
       |객체|데이터베이스|
@@ -11,7 +12,26 @@ Model
       |Model 클래스|테이블|
       |클래스 변수|컬럼|
       |객체|행(데이터 1개)|
-  + models.py에 Model 클래스 작성 (django.db.models.Model 상속, 테이블 이름 : app이름_class이름)
+      
++ Model 클래스 
+  + models.py에 Model 클래스 작성 (DB 테이블 이름 : app이름_class이름 -> Model의 Meta 클래스 db_table 속성을 통해 테이블 이름 지정 가능)
+    + django.db.models.Model 상속
+    + DB 테이블의 컬럼과 연결되는 변수인 Field를 class 변수로 선언
+      ```python
+      변수명 = Field객체(옵션) # 데이터 타입에 맞춰 선언
+      # 주요 필드 옵션
+        # primary_key : default False, True : primary key 컬럼, 생략하면 1씩 자동 증가하는 값을 가지는 id 컬럼 생성
+        # max_length : 문자 타입의 최대 길이(글자수) 설정
+        # null : default False, DB 필드에 NULL 허용 여부
+        # unique : default False, 유일성 여부
+        # DateField.auto_now_add : True면 처음 생성시 현재 시간으로 자동 저장 ex. create 
+        # DateField.auto_now : True면 저장할 때마다 그 시점을 현재 시간으로 자동 저장 ex. update
+        
+        # blank : default false, 입력값 유효성 검사 시 empty 허용 여부
+        # validators : 입력값 유효성 검사를 수행할 함수 지정
+        # verbose_name : 입력 폼으로 사용될 때 label로 사용될 이름, 지정되지 않으면 필드명 사용
+        
+      ```
   + Model 클래스 작성 후 DB에 테이블 생성 또는 Model 클래스 수정 후 변경사항 갱신
     ```cmd
     python manage.py makemigrations # 변경 사항 DB에 넣기 위한 내역을 가진 migration 파일 생성
@@ -21,19 +41,39 @@ Model
     ```python
     # app이름/admin.py
     from .models import Model_클래스
+    
     admin.site.register(Model_클래스)
     ```
 + Model 클래스를 이용한 데이터 CRUD
   + Model Manager : Model 클래스와 연결된 DB table에 SQL 실행할 수 있는 인터페이스
   + 각 Model 클래스의 class 변수 objects 이용하여 사용 : Model_클래스.objects.메소드
+
+  + SELECT
     + 전체 조회
       + all()
     + 조건 조회
       + filter(**kwargs) : 조건 파라미터를 만족하는 조회 결과를 QuerySet으로 반환
       + exclude(**kwargs) : 조건 파라미터를 만족하지 않는 조회 결과를 QuerySet으로 반환, 조회결과 없으면 빈 QuerySet 반환
+        + filter와 exclude는 SELECT의 WHERE 조건 지정
+          + AND 조건
+            ```python
+            # ,로 이어서 작성
+            Item.objects.filter(name='TV', price=4000)
+            ```
+          + OR 조건
+            ```python
+            # Q() 함수 사용
+            Item.objects.filter(Q(name='TV' | ~Q(price=4000)) # Q() 앞에 ~ 붙이면 not
+            # SELECT * FROM Item WHERE (name='TV' OR price!=4000)
+            ```
       + get(**kwargs) : 조건 파라미터를 만족하는 조회결과를 Model 객체로 반환, 조회결과 1개일 때 사용
         + 조회결과 없으면 DoesNotExist 예외 발생, 1개 이상일 경우 MultipleObjectsReturned 예외 발생
-  + 
+       
+  + INSERT / UPDATE
+    + Model객체.save() : Model 객체의 pk값과 동일한 값이 DB에 없으면 insert, 있으면 update
+
+  + DELETE
+    + Model객체.delete() : Model 객체의 pk값의 레코드를 DB에서 삭제
 ## V
 View
 + Client 요청을 받아 Client에게 응답할 때까지의 처리를 담당 -> Client가 요청한 작업을 처리하는 흐름(Work flow) 담당
