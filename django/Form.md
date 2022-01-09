@@ -51,10 +51,43 @@
       #     "name":forms.Textarea
       # }
   ```
+## Generic Edit View
++ app이름/views.py
++ django.views.generic 모듈 사용
+  + CreateView
+    + 저장 - insert 처리
+    + get 방식 요청: 입력양식 화면으로 이동 (render())
+    + post방식 요청: 입력(등록) 처리. 
+      + 처리성공: 성공페이지로 이동 (redirect) 
+      + 처리실패: 입력양식 화면으로 이동 (render())
+    ```python
+    from django.views.generic import CreateView
+    from django.urls import reverse_lazy
+
+    class ExampleCreateView(CreateView):
+      template_name = '입력폼을 작성한 template 파일 경로'
+      form_class = 입력폼에서 사용할 Form/ModelForm
+      success_url = reverse_lazy('app이름:설정이름',args=[전달할 값]) # path parameter로 전달할 값들을 리스트에 순서대로 담는다.
+      
+    ```
+  + DetailView
+    + pk로 조회한 결과를 template으로 보내주는 generic View
+    + url 패턴 : pk를 path 파라미터로 받는다. <type:pk> 변수명을 pk로 지정해야 한다. (urls.py)
+    ```python
+    from django.views.generic import DetailView
+    class ExampleDetailView(DetailView):
+      template_name = '응답할 template 파일 경로'
+      model = PK로 조회할 모델클래스
+      # 조회결과를 "모델클래스명 소문자" 또는 "object"(권장) 라는 이름으로 template에게 전달
+    ```
+  + UpdateView
+  
+
 ## Form을 이용하여 입력Form template 생성
 + View에서 전달된 Form/ModelForm 객체를 이용하여 입력Form 생성
 + form은 iterable로 반복 시 각각의 Field를 반환
   ```python
+  # template 파일
   # {% load bootstrap4 %} # 부트스트랩 적용
   
   <form method='post'>
