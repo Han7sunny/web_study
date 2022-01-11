@@ -143,6 +143,7 @@
 ## Generic Display View
 + DetailView
   + pk로 조회한 결과를 template으로 보내주는 generic View
+  + 조회결과를 "모델클래스명 소문자" 또는 "object"(권장) 라는 이름으로 template에 전달
   + url 패턴 : pk를 path 파라미터로 받는다. <type:pk> 변수명을 pk로 지정해야 한다. (urls.py)
     ```python
     from django.views.generic import DetailView
@@ -150,7 +151,6 @@
     class ExampleDetailView(DetailView):
       template_name = '응답할 template 파일 경로'
       model = PK로 조회할 모델클래스
-      # 조회결과를 "모델클래스명 소문자" 또는 "object"(권장) 라는 이름으로 template에게 전달
       # context_object_name = 'template에서 사용할 이름 지정'
       
     # app이름/urls.py에서
@@ -158,7 +158,7 @@
     ```
 + ListView
   + 지정한 Model의 전체 데이터를 조회하여 Template으로 전달
-  + 조회결과를 template에 "object_list"(권장) 또는 "모델이름소문자_list" 라는 이름으로 전달
+  + 조회결과를 "object_list"(권장) 또는 "모델이름소문자_list" 라는 이름으로 template에 전달
      ```python
     from django.views.generic import ListView
 
@@ -176,19 +176,20 @@
         template_name = "결과를 보여줄 template 파일 경로"    
         model = 조회할 Model클래스
         
-        paginate_by = n  # 한 페이지의 데이터 개수 n , paginator 생성됨
+        paginate_by = n  # 한 페이지의 데이터 개수 n , Paginator 생성됨
         # 동일 : Paginator(조회할 Model클래스.objects.all(), n) -> context_data에 담김
         
         # 페이징관련 값들을 context data에 추가
-        # get_context_data(): Generic View를 구현할 때 template에게 추가적으로 전달해야하는 context data가 있을때 overriding
+        # get_context_data 함수 : Generic View를 구현할 때 template에게 추가적으로 전달해야하는 context data가 있을때 overriding
         def get_context_data(self, **kwargs): # overriding
           # 부모객체의 get_context_data()를 호출해서 generic view가 자동으로 생성한 Context data를 받아온다.
           context = super().get_context_data(**kwargs) # 반드시 실행! 부모가 작성한 것 쓰지 않는다고 해도 {조회결과, Paginator 등}
           
           # ListView에서 paginate_by 속성을 설정하면 context data에 Paginator객체가 등록된다.
           paginator = context['paginator']
-          page_group_count = n # 페이지그룹에 속한 페이지 개수 n
+          page_group_count = n # 페이지 그룹당 페이지 개수 n
           current_page = int(self.request.GET.get('page', 1)) # 사용자가 요청한 페이지 번호, 넘어온 값 없으면 1(처음)
+          # 'url?page=페이지번호' 형식으로 넘어옴 
           # CBV에서 HttpRequest는 self.request로 사용할 수 있다.
 
           # 페이지 그룹의 페이지 범위 조회
@@ -215,8 +216,8 @@
           return context # dictionary -> 처음에 부모로부터 받아옴  + 'page_range' + ... 추가됨
           # 최종적으로 render()의 딕셔너리 값으로 넘어감
     ```
-  
-## Form을 이용하여 입력Form template 생성
+    
+## Form을 이용하여 Form template 생성
 + View에서 전달된 Form/ModelForm 객체를 이용하여 입력Form 생성
 + form은 iterable로 반복 시 각각의 Field를 반환
   ```python
@@ -230,4 +231,60 @@
     # {% bootstrap_form form %} # 부트스트랩 적용
     {% endfor%}
   </form>
+  ```
++ ListView의 template 파일
+  ```python
+  {% load bootstrap4 %} # 부트스트랩 적용
+  
+  {% if is_paginated %} <!-- 페이징 처리 유무 (ListView: paginate_by 설정하면 True, 안했으면 False) -->
+  <ul class='pagination justify-content-center'> <!--justify-content-center : 내부의 모든 내용들을 정가운데로 정렬-->
+  
+    <!-- ############################################################
+        이전 페이지 그룹 이동 링크
+          이전 페이지 그룹 존재 : has_previous
+            시작페이지의 이전 페이지 번호 : previous_page_no
+    ############################################################ -->
+    {% if has_previous %}
+      <li class='page-item'>
+          <a href="{%url 'board:list'%}?page={{previous_page_no}}" class='page-link'>이전</a>
+      </li>       
+    {% else%}
+      <li class='page-item'>
+          <span class='page-link'>이전</span>
+      </li>
+    {% endif %}
+
+    <!-- ############################################################
+        페이지 링크
+          현재 페이지의 Page 객체 : page_obj
+          현재 페이지의 번호 조회 : page_obj.number
+    ############################################################ -->
+    {% for page in page_range %}
+      {% if page == page_obj.number %}
+          <li class='page-item active'> <!-- active : 현재 페이지 -->
+              <span class='page-link'>{{page}}</span>
+          </li>
+      {% else%}
+          <li class='page-item '>
+              <a href="{% url 'board:list'%}?page={{page}}" class='page-link '>{{page}}</a>
+          </li>
+      {% endif %}
+    {% endfor %}
+
+    <!-- ############################################################
+        다음 페이지 그룹 이동 링크
+          다음 페이지 그룹 존재 : has_next
+            시작페이지의 다음 페이지 번호 : next_page_no
+    ############################################################ -->
+    {% if has_next %}
+      <li class='page-item'>
+          <a href="{%url 'board:list'%}?page={{next_page_no}}" class='page-link'>다음</a>
+      </li>
+    {% else %}
+      <li class='page-item'>
+          <span class='page-link'>다음</span>
+      </li>
+    {% endif %}
+  </ul>
+  {% endif %}
   ```
