@@ -73,7 +73,7 @@ public class HelloController {
 + @GetMapping : HTTP GET request가 들어올 때 @GetMapping을 작성한 메소드 호출    
 
 ### Add Unit Tests
-##### 추가한 endpoint에 대한 Unit Test(단위 테스트)
+##### 추가한 endpoint(Controller)에 대한 Unit Test(단위 테스트)
 ```java
 // build.gradle의 dependency 추가
 testImplementation('org.springframework.boot:spring-boot-starter-test') // Junit4 사용을 위함
@@ -113,10 +113,10 @@ public class HelloControllerTest { // 앞의 HelloController에 대한 테스트
 Server 없이 HTTP request 처리하며 Spring application context 실행됨,,실제 controller 실행X
 -> 그러려면 Spring MockMvc 사용하고 @AutoConfigureMockMvc를 통해 주입되도록 함
 MockMvc : DispatcherServlet에 HTTP request를 보내고 결과를 확인 (원하는 결과 제대로 반환하는지 확인)
-	+ MockMvc 인스턴스를 주입하기 위해 @SpringBootTest와 @AutoConfigureMockMvc 작성
-+ @SpringBootTest : Spring Container와 Test 함께 실행, Application context를 생성 (의존성 제공),, 통합 테스트를 제공하는 기본적인 spring test annotation
-	+ @WebMvcTest : web layer만 생성
-+ @AutoConfigureMockMvc : Mock 테스트에 필요한 의존성 제공
+	+ MockMvc 인스턴스를 주입하기 위해 @SpringBootTest와 @AutoConfigureMockMvc 작성 또는 @WebMvcTest 사용
++ @SpringBootTest : Spring Container와 Test 함께 실행, Application context를 생성 (의존성 제공), 통합 테스트를 제공하는 기본적인 spring test annotation, @WebMvcTest와 달리 @Service, @Repository 어노테이션이 붙은 객체 또한 메모리에 올림
+	+ @WebMvcTest : web layer만 생성하여 테스트, @SpringBootTest와 같이 사용될 수 없음, Controller 테스트에 적합
++ @AutoConfigureMockMvc : Mock 테스트에 필요한 의존성 제공, DI를 위한 
 + @Test 
 
 ### Full-stack Integration Test
@@ -133,7 +133,7 @@ import org.springframework.http.ResponseEntity;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT) // 내장된 server가 임의의 port로 시작 -> 실제 Servlet 환경 구성
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT) // 내장된 server가 임의의 port로 시작 -> 실제 Servlet 환경 구성,,처럼? Default : Mock 서블릿 환경으로 Server 구동 X
 public class HelloControllerIT {
 
 	@Autowired
