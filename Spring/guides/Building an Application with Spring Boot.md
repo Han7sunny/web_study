@@ -110,8 +110,6 @@ public class HelloControllerTest { // 앞의 HelloController에 대한 테스트
 	}
 }
 ```
-Server 없이 HTTP request 처리하며 Spring application context 실행됨,,실제 controller 실행X
--> 그러려면 Spring MockMvc 사용하고 @AutoConfigureMockMvc를 통해 주입되도록 함
 MockMvc : DispatcherServlet에 HTTP request를 보내고 결과를 확인 (원하는 결과 제대로 반환하는지 확인)
 	+ MockMvc 인스턴스를 주입하기 위해 @SpringBootTest와 @AutoConfigureMockMvc 사용 또는 @WebMvcTest 사용
 + @SpringBootTest : Spring Container와 Test 함께 실행, Application context를 생성 (의존성 제공), 통합 테스트를 제공하는 기본적인 spring test annotation, @WebMvcTest와 달리 @Service, @Repository 어노테이션이 붙은 객체 또한 메모리에 올림
@@ -143,7 +141,7 @@ public class HelloControllerIT {
     	@Test
     	public void getHello() throws Exception {
         	ResponseEntity<String> response = template.getForEntity("/", String.class);
-        	assertThat(response.getBody()).isEqualTo("Greetings from Spring Boot!");
+        	assertThat(response.getBody()).isEqualTo("Greetings from Spring Boot!"); // "/" request -> HelloController의 index() 반환값과 동일한지 확인
     	}
 }
 ```
@@ -153,3 +151,18 @@ public class HelloControllerIT {
 	+ WebEnvironment.MOCK : Default값으로 Mock 서블릿 환경으로 Server 구동 X
 	+ WebEnvironment.RANDOM_PORT : Server가 랜덤포트로 구동
 실제 port는 TestRestTemplate의 기본 url에서 자동적으로 설정
++ TestRestTemplate : 테스트용 클라이언트
+	+ 위의 WebEnvironment 설정으로 내장 Server 구동되어 MockMvc 사용할 수 없으니 테스트를 위한 HTTP request를 보낼 수 있는 클라이언트 필요
+	
+### Add Production-grade Services
+##### management service 추가
+```java
+// build.gradle의 dependency 추가
+implementation 'org.springframework.boot:spring-boot-starter-actuator'
+```   
+##### Restart the application
+```cmd
+./gradlew bootRun
+```
++ RESTful end point들이 추가됨 -> Spring Boot가 제공하는 management services
++ http://localhost:8080/actuator/health 또는 http://localhost:8080/actuator로 접근 가능
