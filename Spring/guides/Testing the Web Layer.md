@@ -92,4 +92,39 @@ public class SmokeTest {
 }
 ```
 + @Autowired : controller는 테스트 메소드가 실행되기 전에 주입됨
-+ AssertJ : assertThat() 등과 같은 메소드를 제공하며 
++ AssertJ : assertThat() 등과 같은 메소드를 제공하며 test assertion을 표현
+> Spring Test의 좋은 기능은 application context가 test 간에 cache됨
+> 테스트 케이스에 여러 메소드가 있거나 동일한 설정에 여러 테스트 케이스가 있는 경우 application을 시작하는데 한 번의 비용만 발생
+> @DirtiesContext 어노테이션을 통해 cache를 제어할 수 있음
+
+##### Application의 행동(behavior)을 확인하는 테스트
++ Application을 시작하고 연결을 수신한 뒤 HTTP request를 보내고 response를 확인(assert)
+```java
+package com.example.testingweb;
+
+import org.junit.jupiter.api.Test;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
+import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.boot.web.server.LocalServerPort;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+@SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
+public class HttpRequestTest {
+
+	@LocalServerPort
+	private int port;
+
+	@Autowired
+	private TestRestTemplate restTemplate;
+
+	@Test
+	public void greetingShouldReturnDefaultMessage() throws Exception {
+		assertThat(this.restTemplate.getForObject("http://localhost:" + port + "/",
+				String.class)).contains("Hello, World");
+	}
+}
+```
