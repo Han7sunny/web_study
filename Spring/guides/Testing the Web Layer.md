@@ -128,3 +128,8 @@ public class HttpRequestTest {
 	}
 }
 ```
++ @LocalServerPort : 테스트 환경에서 충돌을 피하는데 유용한 랜덤 포트를 사용하여 server를 시작(WebEnvironment=RANDOM_PORT)하고 @LocalServerPort로 포트를 주입
++ @Autowired : Spring Boot가 자동으로 TestRestTemplate 제공하므로 @Autowired만 추가해주면 됨
+    
+##### 또 다른 유용한 접근 방식은 서버를 실행시키지 않고 그 아래 layer만 테스트하는 것
+: Spring은 HTTP 요청을 처리하고 이를 controller에게 전달
