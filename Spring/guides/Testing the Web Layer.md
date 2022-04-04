@@ -184,3 +184,44 @@ public class WebLayerTest {
 }
 ```
 + @WebMvcTest : 테스트 범위를 web layer로만 좁힘
+Test assertion이 이전 케이스와 동일하지만 이번 테스트에선 Spring Boot가 전체 context가 아닌 web layer만을 인스턴스화 함
+여러 controller가 있는 application에서 @WebMvcTest(HomeController.class)를 사용하여 하나만 인스턴스화 할 수 있음
+
+##### dependency가 없었던 이전의 controller와 달리 인사말을 저장하기 위한 별도의 component 도입 (service)
+```java
+package com.example.testingweb;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+
+@Controller
+public class GreetingController {
+
+	private final GreetingService service;
+
+	public GreetingController(GreetingService service) {
+		this.service = service;
+	}
+
+	@RequestMapping("/greeting")
+	public @ResponseBody String greeting() {
+		return service.greet();
+	}
+
+}
+```
+```java
+package com.example.testingweb;
+
+import org.springframework.stereotype.Service;
+
+@Service
+public class GreetingService {
+	public String greet() {
+		return "Hello, World";
+	}
+}
+```
+Spring은 자동으로 controller에 service를 DI함 (Controller의 생성자)
