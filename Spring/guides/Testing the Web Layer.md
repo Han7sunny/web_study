@@ -184,8 +184,8 @@ public class WebLayerTest {
 }
 ```
 + @WebMvcTest : 테스트 범위를 web layer로만 좁힘
-Test assertion이 이전 케이스와 동일하지만 이번 테스트에선 Spring Boot가 전체 context가 아닌 web layer만을 인스턴스화 함
-여러 controller가 있는 application에서 @WebMvcTest(HomeController.class)를 사용하여 하나만 인스턴스화 할 수 있음
++ Test assertion이 이전 케이스와 동일하지만 이번 테스트에선 Spring Boot가 전체 context가 아닌 ### web layer만 ### 을 인스턴스화 함
++ 여러 controller가 있는 application에서 @WebMvcTest(HomeController.class)를 사용하여 하나만 인스턴스화 할 수 있음
 
 ##### dependency가 없었던 이전의 controller와 달리 인사말을 저장하기 위한 별도의 component 도입 (service)
 ```java
@@ -200,7 +200,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 public class GreetingController {
 
 	private final GreetingService service;
-
+	// Spring은 자동으로 controller에 service를 DI함 (Controller의 생성자) 
 	public GreetingController(GreetingService service) {
 		this.service = service;
 	}
@@ -223,5 +223,40 @@ public class GreetingService {
 		return "Hello, World";
 	}
 }
+```         
+```java
+package com.example.testingweb;
+
+import static org.hamcrest.Matchers.containsString;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+import org.junit.jupiter.api.Test;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.web.servlet.MockMvc;
+
+@WebMvcTest(GreetingController.class)
+public class WebMockTest {
+
+	@Autowired
+	private MockMvc mockMvc;
+
+	@MockBean
+	private GreetingService service;
+
+	@Test
+	public void greetingShouldReturnMessageFromService() throws Exception {
+		when(service.greet()).thenReturn("Hello, Mock");
+		this.mockMvc.perform(get("/greeting")).andDo(print()).andExpect(status().isOk())
+				.andExpect(content().string(containsString("Hello, Mock")));
+	}
+}
 ```
-Spring은 자동으로 controller에 service를 DI함 (Controller의 생성자)
++ @MockBean : GreetingService를 위한 mock을 생성 및 주입 (그렇지 않으면 application context 실행 불가)
++ Mockito 사용하여 expectation 설정
