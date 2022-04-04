@@ -1,4 +1,5 @@
 # Testing the Web Layer
+[원문](https://spring.io/guides/gs/testing-web/)
 ### Application 개발 및 JUnit을 통한 테스트
 + application context 가동
 + Spring의 MockMvc를 이용한 web layer 테스트
@@ -131,5 +132,55 @@ public class HttpRequestTest {
 + @LocalServerPort : 테스트 환경에서 충돌을 피하는데 유용한 랜덤 포트를 사용하여 server를 시작(WebEnvironment=RANDOM_PORT)하고 @LocalServerPort로 포트를 주입
 + @Autowired : Spring Boot가 자동으로 TestRestTemplate 제공하므로 @Autowired만 추가해주면 됨
     
-##### 또 다른 유용한 접근 방식은 서버를 실행시키지 않고 그 아래 layer만 테스트하는 것
-: Spring은 HTTP 요청을 처리하고 이를 controller에게 전달
+##### Server 없이 전체 Spring application context 테스트 실행
+	
+```java
+package com.example.testingweb;
+
+import static org.hamcrest.Matchers.containsString;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+import org.junit.jupiter.api.Test;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.web.servlet.MockMvc;
+
+@SpringBootTest
+@AutoConfigureMockMvc
+public class TestingWebApplicationTest {
+
+	@Autowired
+	private MockMvc mockMvc;
+
+	@Test
+	public void shouldReturnDefaultMessage() throws Exception {
+		this.mockMvc.perform(get("/")).andDo(print()).andExpect(status().isOk())
+				.andExpect(content().string(containsString("Hello, World")));
+	}
+}
+```
+거의 전체 Spring application context이 시작되며 서버 실행 비용 없이(서버 실행 없이) 실제 HTTP 요청을 처리하는 것과 동일한 방식으로 코드 호출됨
++ @AutoConfigureMockMvc : Spring의 MockMvc 주입되도록 요청
+
+##### Web layer만 테스트 
+
+```java
+@WebMvcTest
+public class WebLayerTest {
+
+	@Autowired
+	private MockMvc mockMvc;
+
+	@Test
+	public void shouldReturnDefaultMessage() throws Exception {
+		this.mockMvc.perform(get("/")).andDo(print()).andExpect(status().isOk())
+				.andExpect(content().string(containsString("Hello, World")));
+	}
+}
+```
++ @WebMvcTest : 테스트 범위를 web layer로만 좁힘
