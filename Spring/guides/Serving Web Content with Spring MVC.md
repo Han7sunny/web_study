@@ -45,13 +45,13 @@ public class GreetingController {
 }
 ```
 + GreetingController는 "/greeting" GET request 처리를 View의 이름으로 반환(예제 : "greeting")
-+ @Controller : @Controller 어노테이션을 통해 controller를 쉽게 식별
++ @Controller : HTTP request 처리, 해당 클래스 객체를 controller로 사용
 + @GetMapping : "/greeting"에 대한 HTTP GET request를 greeting() 메소드와 매핑
 + @RequestParam : query string parameter인 name의 값을 greeting() 메소드의 name parameter에 바인딩
 	+ 현재 예제에서 query string의 parameter는 required=false로 필수적인 값 아님. request 없으면 defaultValue인 "World" 사용         
 
 + View는 HTML 내용을 rendering
-+ greeting() 메소드 본문의 구현은 HTML 서버측의 렌더링을 수행하기 위해 view technology (해당 예제에선 Thymeleaf)에 의존
++ greeting() 메소드 본문의 구현은 HTML 서버측의 렌더링을 수행하기 위해 view technology (해당 예제에선 Thymeleaf : template engine)에 의존
 ```html
 <!DOCTYPE HTML>
 <html xmlns:th="http://www.thymeleaf.org">
@@ -71,11 +71,11 @@ public class GreetingController {
 + web application 개발의 일반적인 기능은 변경 사항을 코딩하고, application을 재시작하며, 변경사항을 보기 위해 browser를 새로 고침함
 + 이러한 전체적인 프로세스는 시간 소모가 크다. 이러한 새로 고침 주기의 속도를 높이기 위해 Spring Boot는 spring-boot-devtools로 알려진 편리한 모듈 제공 
 
-#### Spring Boot Devtools:
-+ Hot Swapping 활성화
-+ caching 비활성화하도록 template engine 전환
-+ browser 자동으로 새로 고침하기 위해 LiveReload 활성화
-+ production 대신 개발을 기반으로 한 기타 합리적인 기본값들
+	#### Spring Boot Devtools:
+	+ Hot Swapping 활성화
+	+ caching 비활성화하도록 template engine 전환
+	+ browser 자동으로 새로 고침하기 위해 LiveReload 활성화
+	+ production 대신 개발을 기반으로 한 기타 합리적인 기본값들
 
 ### Run the Application
 Spring Initializr로부터 제공되는 application class
@@ -108,5 +108,18 @@ public class ServingWebContentApplication {
 
 ### Add a Home Page
 + HTML, JavaScript, CSS를 포함한 정적 리소스는 올바른 위치에 소스 코드를 작성하여 Spring Boot application에서 사용 가능
-+ 기본적으로 Spring Boot는 /static (또는 /public)에 있는 classpath의 resources에서 정적 콘텐츠 제공
-+ index.html는 welcome page로 ~~~ (pdf 참조)
++ 기본적으로 Spring Boot는 /static(또는 /public)이 있는 classpath의 resources에서 정적 콘텐츠 제공
++ 만약 index.html 존재한다면 이는 welcome page로 사용됨
+```html
+<!DOCTYPE HTML>
+<html>
+<head> 
+    <title>Getting Started: Serving Web Content</title> 
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+</head>
+<body>
+    <p>Get your greeting <a href="/greeting">here</a></p>
+</body>
+</html>
+```
+application을 재시작하면 http://localhost:8080/ 에 HTML 표시됨
