@@ -1,7 +1,9 @@
-# Building REST services with Spring
+# Building REST services with Spring    
+
 ##### [원문](https://spring.io/guides/tutorials/rest/)
 
 
+### REST
 REST는 architecture, benefit 및 기타 모든 것들을 포함한 웹의 원칙을 수용            
             
 웹과 그 핵심 프로토콜인 HTTP는 다음과 같은 기능 스택 제공
@@ -22,24 +24,26 @@ HTTP 기반으로 구축한 REST API는 다음을 구축할 수 있는 수단 �
 
 + 보안 가능한 서비스
 
-+ stateless 부터 stateful한 services까지의 스펙트럼
++ stateless부터 stateful한 services까지의 스펙트럼
 
-REST는 유비쿼터스에 있더라도 그 자체로 표준이 아니라 web-scale 시스템을 구축하는데 도움이 될 수 있는 아키텍처의 접근 방식, 스타일, 제약 조건의 집합
+REST는 유비쿼터스에 있더라도 그 자체로 표준이 아니라 web-scale 시스템을 구축하는데 도움이 될 수 있는 아키텍처의 접근 방식, 스타일, 제약 조건의 집합       
 
-이 튜토리얼에서는 Spring portfolio를 사용하여 REST의 stackless 기능을 활용하며 RESTful 서비스를 구축
+### What You Will Build
+Spring portfolio를 사용하여 REST의 stackless 기능을 활용한 RESTful 서비스를 구축
 
-회사의 직원들을 관리하는 간단한 payroll 서비스 
-직원 객체들을 H2 DB에 저장하고 JPA를 통해 접근
-Spring MVC layer로 불리는 인터넷을 통한 접근을 허용하는 것으로 래핑함
+- 회사의 직원들을 관리하는 간단한 payroll 서비스 
+- 직원 객체들을 H2 DB에 저장하고 JPA를 통해 접근
+- Spring MVC layer로 불리는 인터넷을 통한 접근을 허용하는 것으로 래핑함
 
 
 ### Getting Started
 Starting with Spring Initializr
 1. https://start.spring.io
-2. Gradle and java ,, 이 튜토리얼에서는 maven 기반
+2. Gradle and java , but 이 튜토리얼에서는 maven 기반
 3. Dependencies : Web, JPA, H2
 4. Name : Payroll , Generate and download zip file
 
+### REST 개념을 생략한 아주 간단한 payroll 서비스
 ```java
 package payroll;
 
@@ -50,7 +54,7 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 
 @Entity
-class Employee {
+class Employee { // 도메인 객체
 
   private @Id @GeneratedValue Long id;
   private String name;
@@ -58,6 +62,7 @@ class Employee {
 
   Employee() {}
 
+  // Id 값 아직 없을 때 생성
   Employee(String name, String role) {
 
     this.name = name;
@@ -113,4 +118,9 @@ class Employee {
 ```
 + @Entity : JPA 어노테이션으로 해당 객체를 JPA 기반 데이터 저장소에 저장할 준비를 마침
 + @Id : 기본키(primary key)를 의미하며 JPA provider에 의해 자동으로 채워짐
-+ @GeneratedValue 
++ @GeneratedValue : @Id와 함께 사용되며 기본키 값의 생성 전략 제공
+이와 같은 도메인 객체 정의를 통해 Spring Data JPA로 전환하여 데이터베이스 상호작용 처리
+
+Spring Data JPA repository는 백엔드 데이터 저장소에 대한 레코드 생성, 읽기, 수정, 삭제 메소드를 지닌 인터페이스
+일부 repository는 적절한 경우 데이터 페이징(paging) 및 정렬 제공
+Spring Data는 인터페이스의 메소드 이름에서 발견되는 규칙을 기반으로 구현
