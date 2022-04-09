@@ -385,4 +385,24 @@ Could not find employee 3
 + 모든 CRUD 작업을 배치하는 것은 REST라고 할 수 없음
 
 사실 지금까지 우리가 빌드한 것은 RPC(Remote Procedure Call)라고 서술하는 것이 나음               
-이 서비스와 상호 작용하는 방법을 알 수 있는 방법이 없기 때문                  
+이 서비스와 상호 작용하는 방법을 알 수 있는 방법이 없기 때문                   
+Roy Fielding의 이 진술은 REST와 RPC의 차이점에 대한 단서를 추가로 제공         
+> 나는 HTTP 기반 인터페이스를 REST API로 호출하는 사람들의 수에 좌절감을 느끼고 있다. 
+> 오늘날의 예는 SocialSite REST API다. 그것은 RPC이다. RPC라고 외친다. 
+>
+> hypertext가 제약 조건이라는 개념에서 REST 아키텍처 스타일을 명확히 하려면 무엇을 해야할까?
+> 다시 말해, 만약 application 상태 엔진(API)이 hypertext에 의해 구동되지 않는다면 이는 RESTful하지 않으며 REST API라고 할 수 없다. 
+> - Roy Fielding
+> - https://roy.gbiv.com/untangled/2008/rest-apis-must-be-hypertext-driven
+
+hypermedia를 포함하지 않는 표현의 부작용은 클라이언트가 API를 탐색하기 위해 URI를 하드 코딩해야한다는 것          
+이는 웹에서 전자 상거래가 부상하기 이전과 동일한 취약점을 초래하기에 JSON 출력에 약간의 도움이 필요하다는 신호   
+                     
+hypermedia 기반 출력을 돕는 것을 목표로 하는 Spring HATEOAS를 소개한다.
+이전의 서비스를 RESTful하게 업그레이드 하려면 pom.xml의 dependencies에 Spring HATEOAS 추가 
+```xml
+<dependency>
+	<groupId>org.springframework.boot</groupId>
+	<artifactId>spring-boot-starter-hateoas</artifactId>
+</dependency>
+```
