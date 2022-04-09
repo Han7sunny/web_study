@@ -53,7 +53,7 @@ import java.util.Objects;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
-
+ 
 @Entity
 class Employee { // 도메인 객체
 
@@ -318,3 +318,35 @@ class EmployeeController {
   + @ResponseStatus : HTTPStatus.NOT_FOUND는 응답 상태 HTTP 404를 의미
   
 PayRollApplication의 public static void main에서 마우스 오른쪽 클릭한 후 실행
+
+만약 존재하지 않는 직원을 검색한다면
+```terminal
+$ curl -v localhost:8080/employees/99
+```
+Custom message인 Could not find employee 99 와 HTTP 404 에러 확인 할 수 있음
+```terminal
+*   Trying ::1...
+* TCP_NODELAY set
+* Connected to localhost (::1) port 8080 (#0)
+> GET /employees/99 HTTP/1.1
+> Host: localhost:8080
+> User-Agent: curl/7.54.0
+> Accept: */*
+>
+< HTTP/1.1 404
+< Content-Type: text/plain;charset=UTF-8
+< Content-Length: 26
+< Date: Thu, 09 Aug 2018 18:00:56 GMT
+<
+* Connection #0 to host localhost left intact
+Could not find employee 99
+```
+
+> 만약 Windows 명령 프롬프트를 사용하여 cURL 명령을 실행하는 경우 아래의 명령문이 제대로 작동하지 않을 수 있음 
+> 작은 따옴표로 묶인 arguments를 지원하는 터미널을 선택하거나 큰 따옴표를 사용한 뒤 JSON 내부에서 escape 처리
+
+새로운 Employee record 생성         
+```terminal
+$ curl -X POST localhost:8080/employees -H 'Content-type:application/json' -d '{"name": "Samwise Gamgee", "role": "gardener"}'
+```
+새로 생성된 employee를 저장하고 
