@@ -349,4 +349,40 @@ Could not find employee 99
 ```terminal
 $ curl -X POST localhost:8080/employees -H 'Content-type:application/json' -d '{"name": "Samwise Gamgee", "role": "gardener"}'
 ```
-새로 생성된 employee를 저장하고 
+새로 생성된 employee를 저장하고 우리에게 다시 보냄
+```terminal
+{"id":3,"name":"Samwise Gamgee","role":"gardener"}
+```
+
+기존의 employee를 수정
+```terminal
+$ curl -X PUT localhost:8080/employees/3 -H 'Content-type:application/json' -d '{"name": "Samwise Gamgee", "role": "ring bearer"}'
+```
+변경 사항이 반영된 것을 확인
+```terminal
+{"id":3,"name":"Samwise Gamgee","role":"ring bearer"}
+```
+        
+> 서비스를 구성하는 방식은 상당한 영향을 미칠 수 있음            
+> 이 상황에서 우리는 update(수정)라고 했지만 (replace)교체가 더 나은 설명             
+> 예를 들어 이름이 제공되지 않으면 null이 대신됨
+
+employee를 삭제              
+```terminal
+$ curl -X DELETE localhost:8080/employees/3
+
+# Now if we look again, it's gone
+$ curl localhost:8080/employees/3
+Could not find employee 3
+```
+            
+잘 작동되지만 이는 RESTful service라고 할 수 없음             
+
+### What makes something RESTful?
+지금까지 employee 데이터와 관련된 핵심 작업을 처리하는 web-based service를 다루었는데 이는 RESTful이라고 하기 충분하지 않음
++ /employees/3 와 같은 URL는 REST라고 할 수 없음
++ 단순히 GET, POST 등을 사용하는 것은 REST라고 할 수 없음
++ 모든 CRUD 작업을 배치하는 것은 REST라고 할 수 없음
+
+사실 지금까지 우리가 빌드한 것은 RPC(Remote Procedure Call)라고 서술하는 것이 나음               
+이 서비스와 상호 작용하는 방법을 알 수 있는 방법이 없기 때문                  
