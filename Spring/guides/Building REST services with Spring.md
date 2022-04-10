@@ -398,7 +398,7 @@ Roy Fielding의 이 진술은 REST와 RPC의 차이점에 대한 단서를 추�
 hypermedia를 포함하지 않는 표현의 부작용은 클라이언트가 API를 탐색하기 위해 URI를 하드 코딩해야한다는 것          
 이는 웹에서 전자 상거래가 부상하기 이전과 동일한 취약점을 초래하기에 JSON 출력에 약간의 도움이 필요하다는 신호   
                      
-hypermedia 기반 출력을 돕는 것을 목표로 하는 Spring HATEOAS를 소개한다.
+hypermedia 기반 출력을 돕는 것을 목표로 하는 Spring HATEOAS를 소개한다.              
 이전의 서비스를 RESTful하게 업그레이드 하려면 pom.xml의 dependencies에 Spring HATEOAS 추가 
 ```xml
 <dependency>
@@ -406,3 +406,77 @@ hypermedia 기반 출력을 돕는 것을 목표로 하는 Spring HATEOAS를 소
 	<artifactId>spring-boot-starter-hateoas</artifactId>
 </dependency>
 ```
+이 작은 라이브러리는 RESTful service를 정의하고 클라이언트가 사용하기 적합한 형식으로 렌더링하는 구성 제공          
+모든 RESTful service의 중요한 요소는 관련 작업의 링크를 추가하는 것이다. controller를 더욱더 RESTful하게 만들려면 다음과 같이 링크를 추가 :        
+```java
+@GetMapping("/employees/{id}")
+EntityModel<Employee> one(@PathVariable Long id) {
+
+  Employee employee = repository.findById(id) //
+      .orElseThrow(() -> new EmployeeNotFoundException(id));
+
+  return EntityModel.of(employee, //
+      linkTo(methodOn(EmployeeController.class).one(id)).withSelfRel(),
+      linkTo(methodOn(EmployeeController.class).all()).withRel("employees"));
+}
+```
+> 이 튜토리얼은 Spring MVC를 기반으로 하며 WebMvcLinkBuilder의 정적 helper method를 사용하여 이러한 링크를 빌드
+
+이전의 것과 유사하지만 몇 가지 변경됨 :            
++ 메소드의 반환 타입이 Employee에서 EntityModel<Employee>로 변경. EntityModel<T>은 데이터뿐만 아니라 링크 모음을 포함하는 Spring HATEOAS의 제네릭 컨테이너
++ linkTo(methodOn(EmployeeController.class).one(id)).withSelfRel()는 Spring HATEOAS가 EmployeeController의 one() 메소드에 대한 링크를 빌드하고 자체 링크로 플래그하도록 요청
++ linkTo(methodOn(EmployeeController.class).all()).withRel("employees")는 Spring HATEOAS가 집계 루트 all()에 대한 링크를 빌드하고 "employee"라고 부르도록 요청
+	
+"링크를 빌드하는 것(build a link)"은 무엇을 의미할까? Spring HATEOAS의 주요 타입 중 하나는 Link이다.           
+이것은 URI와 rel(Relation)을 포함한다. 링크는 웹에 힘을 실어주는데 World Wide Web 이전에는 다른 정보 시스템이 정보 또는 링크를 렌더링했지만 웹을 하나로 묶은 것은 이러한 종류의 관계 메타데이터가 있는 문서의 연결이었다.     
+	     
+Roy Fielding은 웹을 성공으로 이끈 동일한 기술로 API를 구축할 것을 권장하며 링크가 그 중 하나이다.         
+application을 재시작하고 Bilbo employee record를 검색하면 이전과는 약간 다른 응답을 받을 것이다.
+              
+RESTful한 employee 표현
+```json
+{
+  "id": 1,
+  "name": "Bilbo Baggins",
+  "role": "burglar",
+  "_links": {
+    "self": {
+      "href": "http://localhost:8080/employees/1"
+    },
+    "employees": {
+      "href": "http://localhost:8080/employees"
+    }
+  }
+}	
+```
+압축해제된 출력은 이전에 본 데이터 요소(id, name, role)뿐만 아니라 두개의 URI를 포함하는 _link 항목도 보여줌.     
+이 전체 문서는 *HAL* 을 통해 형식이 지정됨
+	
+HAL은 데이터뿐만 아니라 hypermedia 컨트롤도 인코딩할 수 있는 경량 미디어타입으로 소비자가 탐색할 수 있는 API의 다른 부분에 대해 경고한다.
+	
+아 경우에선 집계 루트에 대한 링크와 "self" 링크 (코드의 this문과 같은 종류)가 있다.          
+집계 루트 또한 더 RESTful하게 만들려면 최상위 링크를 포함하는 동시에 RESTful 구성요소도 포함해야 한다.
+	
+그래서 우린 집계 루트 가져오기를
+```java
+@GetMapping("/employees")
+List<Employee> all() {
+  return repository.findAll();
+}
+```
+집계 루트 리소스 가져오기로 바꾼다.
+```java
+@GetMapping("/employees")
+CollectionModel<EntityModel<Employee>> all() {
+
+  List<EntityModel<Employee>> employees = repository.findAll().stream()
+      .map(employee -> EntityModel.of(employee,
+          linkTo(methodOn(EmployeeController.class).one(employee.getId())).withSelfRel(),
+          linkTo(methodOn(EmployeeController.class).all()).withRel("employees")))
+      .collect(Collectors.toList());
+
+  return CollectionModel.of(employees, linkTo(methodOn(EmployeeController.class).all()).withSelfRel());
+}
+```	
++ CollectionModel<> : 또다른 Spring HATEOAS 콘테이너로 이전의 EntityModel<>와 같은 단일 리소스 엔티티 대신 리소스 컬렉션을 캡슐화하는 것을 목표로 함. CollectionModel<>도 링크 포함할 수 있음.
+	
