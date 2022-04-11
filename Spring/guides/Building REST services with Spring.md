@@ -420,12 +420,13 @@ EntityModel<Employee> one(@PathVariable Long id) {
       linkTo(methodOn(EmployeeController.class).all()).withRel("employees"));
 }
 ```
-> 이 튜토리얼은 Spring MVC를 기반으로 하며 WebMvcLinkBuilder의 정적 helper method를 사용하여 이러한 링크를 빌드
+이 튜토리얼은 Spring MVC를 기반으로 하며 WebMvcLinkBuilder의 static helper method를 사용하여 이러한 링크를 빌드한다. 만약 프로젝트에서 Spring WebFlux를 사용한다면 WebFluxLinkBuilder를 대신 사용해야 한다.
 
-이전의 것과 유사하지만 몇 가지 변경됨 :            
-+ 메소드의 반환 타입이 Employee에서 EntityModel<Employee>로 변경. EntityModel<T>은 데이터뿐만 아니라 링크 모음을 포함하는 Spring HATEOAS의 제네릭 컨테이너
-+ linkTo(methodOn(EmployeeController.class).one(id)).withSelfRel()는 Spring HATEOAS가 EmployeeController의 one() 메소드에 대한 링크를 빌드하고 자체 링크로 플래그하도록 요청
-+ linkTo(methodOn(EmployeeController.class).all()).withRel("employees")는 Spring HATEOAS가 집계 루트 all()에 대한 링크를 빌드하고 "employee"라고 부르도록 요청
+이것은 이전과 매우 유사하지만 몇 가지가 변경되었다.
+
+- 메소드의 반환 타입이 `Employee`에서 `EntityModel<Employee>` 로 변경되었다. `EntityModel<T>` 는 Spring HATEOAS의 제네릭 컨테이너로 데이터뿐만 아니라 링크 모음을 포함한다.
+- `linkTo(methodOn(EmployeeController.class).one(id)).withSelfRel()`는 Spring HATEOAS가 `EmployeeController`의 `one()` 메소드에 대한 링크를 빌드하고 자체 링크로 플래그를 지정하도록 요청한다.
+- `linkTo(methodOn(EmployeeController.class).all()).withRel("employees")`는 Spring HATEOAS가 집계 루트 `all()`에 대한 링크를 빌드하고 이를 “employees”라고 부르도록 요청한다.
 	
 "링크를 빌드하는 것(build a link)"은 무엇을 의미할까? Spring HATEOAS의 주요 타입 중 하나는 Link이다.           
 이것은 URI와 rel(Relation)을 포함한다. 링크는 웹에 힘을 실어주는데 World Wide Web 이전에는 다른 정보 시스템이 정보 또는 링크를 렌더링했지만 웹을 하나로 묶은 것은 이러한 종류의 관계 메타데이터가 있는 문서의 연결이었다.     
@@ -478,5 +479,224 @@ CollectionModel<EntityModel<Employee>> all() {
   return CollectionModel.of(employees, linkTo(methodOn(EmployeeController.class).all()).withSelfRel());
 }
 ```	
-+ CollectionModel<> : 또다른 Spring HATEOAS 콘테이너로 이전의 EntityModel<>와 같은 단일 리소스 엔티티 대신 리소스 컬렉션을 캡슐화하는 것을 목표로 함. CollectionModel<>도 링크 포함할 수 있음.
+`CollectionModel`<>은 또다른 Spring HATEOAS Container로 이전의 `EntityModel<>`와 같은 단일 리소스 엔티티 대신 리소스 컬렉션을 캡슐화하는 것을 목표로 한다. `CollectionModel<>`도 링크를 포함할 수 있다.
+
+<aside>
+✋ “encapsulating collections”는 무슨 뜻일까? Collections of employees?
+
+</aside>
+
+우리가 REST를 이야기하고 있기 때문에 employee resource collections을 캡슐화(encapsulate) 해야 한다.
+
+그렇기 때문에 모든 employee를 가져온 뒤, `List<EntityModel<Employee>>`로 변환시킨다. (Java 8 Stream)
+
+application을 재시작하고 집계 루트를 가져오면 이와 같은 결과를 볼 수 있다.
+
+```json
+{
+  "_embedded": {
+    "employeeList": [
+      {
+        "id": 1,
+        "name": "Bilbo Baggins",
+        "role": "burglar",
+        "_links": {
+          "self": {
+            "href": "http://localhost:8080/employees/1"
+          },
+          "employees": {
+            "href": "http://localhost:8080/employees"
+          }
+        }
+      },
+      {
+        "id": 2,
+        "name": "Frodo Baggins",
+        "role": "thief",
+        "_links": {
+          "self": {
+            "href": "http://localhost:8080/employees/2"
+          },
+          "employees": {
+            "href": "http://localhost:8080/employees"
+          }
+        }
+      }
+    ]
+  },
+  "_links": {
+    "self": {
+      "href": "http://localhost:8080/employees"
+    }
+  }
+}
+```
+
+employee resource collections을 제공하는 집계 루트는 최상위 `“self”` 링크를 가진다. “collection”은 `"_embedded"` 섹션 밑에 나열되며 이것이 HAL이 collection을 표현하는 방식이다.
+
+그리고 collection 각각의 멤버들은 관련된 링크뿐만 아니라 정보도 가지고 있다.
+
+이러한 모든 링크들을 추가하는 것은 무슨 의미가 있을까? 이는 시간이 지남에 따라 REST service를 발전시킬 수 있다. 
+
+기존의 링크는 유지관리를 할 수 있지만 향후 새로운 링크를 추가할 수 있다. 최신 클라이언트는 새로운 링크를 활용할 수 있지만 레거시 클라이언트는 이전 링크에서 유지할 수 있다.
+
+이는 service가 재배치 및 이전되는 경우에 특히 유용하다. 링크 구조가 유지되는 한 클라이언트는 계속해서 검색과 상호작용을 할 수 있다. 
+
+### ****Simplifying Link Creation****
+
+이전의 코드에서 단일 employee 링크가 반복해서 생성되는 것을 알아차렸나?
+
+employee에 단일 링크를 제공하고 집계 루트에 대한 “employees” 링크를 생성하는 코드가 두 번 나타났다. 
+
+이것에 우려를 제기하였다면 해결책이 있다.
+
+간단하게 `Employee`객체를 `EntityModel<Employee>`객체로 변환하는 함수를 정의해야 한다. 
+
+메소드를 쉽게 코딩할 수 있지만 Spring HATEOAS의 `RepresentationModelAssembler`인터페이스를 구현하면 이점이 있다.
+
+```java
+package payroll;
+
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.*;
+
+import org.springframework.hateoas.EntityModel;
+import org.springframework.hateoas.server.RepresentationModelAssembler;
+import org.springframework.stereotype.Component;
+
+@Component
+class EmployeeModelAssembler implements RepresentationModelAssembler<Employee, EntityModel<Employee>> {
+
+  @Override
+  public EntityModel<Employee> toModel(Employee employee) {
+
+    return EntityModel.of(employee, //
+        linkTo(methodOn(EmployeeController.class).one(employee.getId())).withSelfRel(),
+        linkTo(methodOn(EmployeeController.class).all()).withRel("employees"));
+  }
+}
+```
+
+이 간단한 인터페이스는 한가지 메소드를 지닌다 : `toModel()`
+
+`toModel()`는 비모델객체(`Employee`)를 모델기반객체(`EntityModel<Employee>`)로 변환하는 것을 기반으로 한다.
+
+Controller에서 이전에 보았던 모든 코드들은 이 클래스로 옮길 수 있다.
+
+그리고 Spring Framework의 `@Component`어노테이션을 적용하면 app이 시작될 때 자동으로 assembler가 생성된다.
+
+Spring HATEOAS의 모든 모델에 대한 추상화(abstract) 기본 클래스는 `RepresentationModel`이다. 하지만 단순성을 위해 모든 POJO를 모델로 쉽게 매핑하는 매커니즘으로 `EntityModel<T>`를 사용하는 것을 추천한다.
+
+이 assembler를 활용하려면 생성자에 assembler를 주입하여 EmployeeController를 변경하면 된다. 
+
+```java
+@RestController
+class EmployeeController {
+
+  private final EmployeeRepository repository;
+
+  private final EmployeeModelAssembler assembler;
+
+  EmployeeController(EmployeeRepository repository, EmployeeModelAssembler assembler) {
+
+    this.repository = repository;
+    this.assembler = assembler;
+  }
+
+  ...
+
+}
+```
+
+단일 항목 직원 메소드에서 assembler를 사용할 수 있다.
+
+```java
+@GetMapping("/employees/{id}")
+EntityModel<Employee> one(@PathVariable Long id) {
+
+  Employee employee = repository.findById(id) //
+      .orElseThrow(() -> new EmployeeNotFoundException(id));
+
+  return assembler.toModel(employee);
+
+	/* 이전 코드
+	return EntityModel.of(employee,
+      linkTo(methodOn(EmployeeController.class).one(id)).withSelfRel(),
+      linkTo(methodOn(EmployeeController.class).all()).withRel("employees"));
+	*/
+}
+```
+
+이 코드는 거의 동일하지만 `EntityModel<Employee>` 인스턴스를 생성하는 대신 assembler를 위임한다는 점은 다르다. 
+
+```java
+@GetMapping("/employees")
+CollectionModel<EntityModel<Employee>> all() {
+
+  List<EntityModel<Employee>> employees = repository.findAll().stream() //
+      .map(assembler::toModel) 
+			/* 이전 코드
+			map(employee -> EntityModel.of(employee,
+          linkTo(methodOn(EmployeeController.class).one(employee.getId())).withSelfRel(),
+          linkTo(methodOn(EmployeeController.class).all()).withRel("employees")))
+			*/
+      .collect(Collectors.toList());
+
+  return CollectionModel.of(employees, linkTo(methodOn(EmployeeController.class).all()).withSelfRel());
+}
+```
+
+이 코드 또한 거의 비슷하지만 모든 `EntityModel<Employee>` 생성 로직을 `map(assembler::toModel)`로 대체한다. Java 8 메소드 참조 덕분에 플러그인을 연결하고 Controller를 단순화하는 것이 매우 쉬워졌다.
+
+Spring HATEOAS의 주요 설계 목표는 **Right Thing™**을 더 쉽게 하는 것이다. 이 시나리오에서는 하드 코딩없이 service에 hypermedia를 추가한다.
+
+이 단계에서 실제로 hypermedia 기반 콘텐츠를 생성하는 Spring MVC REST Controller를 생성하였다. HAL을 사용하지 않는 클라이언트는 순수한 데이터를 사용하는 동안 추가 비용을 무시할 수 있다. HAL을 사용하는 클라이언트는 권한 있는 API를 사용할 수 있다. 
+
+그러나 Spring으로 진정한 RESTful service를 구축하는데 필요한 것은 이것만이 아니다.
+
+### ****Evolving REST APIs****
+
+하나의 추가 라이브러리와 몇 줄의 추가 코드로 application에 hypermedia를 추가하였다. 그러나 이것만으로 service를 RESTful하게 만들 수 없다. REST의 중요한 면은 기술 스택도 아니고 단일 표준도 아니다.
+
+- REST는 application을 더욱더 탄력적으로 만드는 아키텍처 제약 조건의 모음이다. 복원력의 핵심 요소는 service를 업그레이드 할 때 클라이언트가 downtime(가동 중지 시간)을 겪지 않는 것이다.
+    - 옛날에는 업그레이드는 클라이언트를 깨는 것으로 악명 높았다. 즉, 서버를 업데이트하려면 클라이언트를 업그레이드해야 한다는 것이다. 오늘날과 같은 시대에 업그레이드를 수행하는데 몇 시간 또는 몇 분의 downtime이 발생하면 이는 수백만 달러의 손실로 이어질 수 있다. 일부 회사는 관리자에게 downtime을  최소화할 계획을 제시하도록 한다. 과거에는 로드가 최소인 일요일 오전 2시에 업그레이드를 수행할 수 있었다. 그러나 다른 시간대의 국제 소비자와 거래하는 오늘날의 인터넷 기반 전자 상거래에서는 효과적인 전략이 아니다.
+        
+        
+
+SOAP 기반 service와 CORBA 기반 서비스는 믿을 수 없을 정도로 취약했다. 기존, 신규 클라이언트를 모두 지원할 수 있는 서버를 출시하는 것이 어려웠다. REST 기반 사례를 사용하면, 특히 Spring 기술을 사용하면 훨씬 쉽다.
+
+### ****Supporting changes to the API****
+
+설계 문제를 상상해보자 : Employee 기반 레코드가 있는 시스템을 출시했는데 이 시스템이 큰 타격을 입었다. 시스템을 수많은 기업에 판매하였는데 갑자기 직원의 이름을 firstName과 lastName으로 분리해야하는 상황이 발생한다.
+
+Employee 클래스를 열어 name 필드를 firstName과 lastName으로 바꾸기 전에 잠시 멈추고 생각해 보아라. 클라이언트는 손해를 입을까? 업그레이드하는데 시간이 얼마나 걸릴까? service에 접근하는 모든 클라이언트를 제어해야 하나?
+
+REST 이전의 오래된 전략이 있다 : 데이터베이스에서 column을 절대 삭제하지 마라
+
+데이터베이스 테이블에 항상 column(field)를 추가할 수 있다. 그러나 하나를 (name 필드)를 제거하지 마라. RESTful service의 원칙도 동일하다. 
+
+JSON에 새로운 필드를 추가하되 제거하지 않는다. 
+
+```json
+{
+  "id": 1,
+  "firstName": "Bilbo",
+  "lastName": "Baggins",
+  "role": "burglar",
+  "name": "Bilbo Baggins",
+  "_links": {
+    "self": {
+      "href": "http://localhost:8080/employees/1"
+    },
+    "employees": {
+      "href": "http://localhost:8080/employees"
+    }
+  }
+}
+```
+
+이 형식이 `firstName`, `lastName`, `name`을 어떻게 표시하는지 보았는가?
+
+정보의 복제를 자랑하지만 목적은 기존 클라이언트와 신규 클라이언트를 모두 지원하는 것이다. 
+
+즉, 클라이언트를 동시에 업그레이드 하지 않고 서버를 업그레이드 할 수 있다는 뜻이다.
 	
