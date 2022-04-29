@@ -174,3 +174,73 @@ public class MappingClassController {
 ```
 
 - 클래스 레벨에 매핑 정보를 두면 (`@RequestMapping("/mapping/users")`) 메서드 레벨에서 해당 정보를 조합하여 사용한다.
+
+GET 쿼리 파라미터 전송과 POST HTML Form 전송 방식은 둘 다 형식이 같으므로 구분없이 조회할 수 있다. 이를 **요청 파라미터** **조회** 라고 한다.
+
+```java
+package hello.springmvc.basic.request;
+import hello.springmvc.basic.HelloData;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.*;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.util.Map;
+
+@Slf4j
+@Controller
+public class RequestParamController {
+ 
+@RequestMapping("/request-param-v1")
+public void requestParamV1(HttpServletRequest request, HttpServletResponse response) throws IOException {
+				 String username = request.getParameter("username");
+				 int age = Integer.parseInt(request.getParameter("age"));
+				 log.info("username={}, age={}", username, age);
+				 response.getWriter().write("ok");
+		 }
+}
+```
+
+HttpServletRequest 의 request.getParameter() 를 사용하면 GET 쿼리 파라미터 전송과 POST HTML Form 전송 방식의 요청 파라미터를 조회할 수 있다.
+
+스프링이 제공하는 **@RequestParam** 을 사용하면 요청 파라미터를 매우 편리하게 사용할 수 있다.
+
+```java
+@ResponseBody
+@RequestMapping("/request-param-v2")
+public String requestParamV2( @RequestParam("username") String memberName, // request.getParameter("username")
+															@RequestParam("age") int memberAge) {
+		 log.info("username={}, age={}", memberName, memberAge);
+		 return "ok";
+}
+```
+
+- `@RequestParam` : 파라미터 이름으로 바인딩
+- `@ResponseBody` : View 조회를 무시하고 HTTP message body에 직접 해당 내용 입력
+
+```java
+@ResponseBody
+@RequestMapping("/request-param-v3")
+public String requestParamV3(@RequestParam String username, @RequestParam int age) {
+			log.info("username={}, age={}", username, age);
+			return "ok";
+}
+```
+
+- HTTP 파라미터 이름과 변수 이름이 같을 경우 `@RequestParam`의 name 속성 생략 가능
+- String, int, Integer 등의 단순 타입이면 `@RequestParam`도 생략 가능
+    - `@RequestParam` 생략하면 스프링 MVC는 내부에서 `required=false` 적용
+
+```java
+@ResponseBody
+@RequestMapping("/request-param-required")
+public String requestParamRequired(@RequestParam(required = true) String username,
+																	 @RequestParam(required = false) Integer age) {
+			log.info("username={}, age={}", username, age);
+			return "ok";
+}
+```
+
+- `@RequestParam(required = true)` : 파라미터 필수 여부 Default = true
+    - 해당 파라미터 존재하지 않으면 400 예외 발생
