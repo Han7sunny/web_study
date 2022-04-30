@@ -244,3 +244,235 @@ public String requestParamRequired(@RequestParam(required = true) String usernam
 
 - `@RequestParam(required = true)` : 파라미터 필수 여부 Default = true
     - 해당 파라미터 존재하지 않으면 400 예외 발생
+- 예) “/request-param-required?username=” 요청 들어올 경우
+    - 파라미터 이름만 있고 값이 없는 경우 빈문자(””)로 예외 발생하지 않고 통과한다.
+- `@RequestParam(required = false)` : 파라미터 값 없을 경우 null 입력된다.
+    - 따라서 int가 아닌 Integer로 입력 받거나 `defaultValue` 사용
+
+```java
+@ResponseBody
+@RequestMapping("/request-param-default")
+public String requestParamDefault(
+							@RequestParam(required = true, defaultValue = "guest") String username,
+							@RequestParam(required = false, defaultValue = "-1") int age) {
+			log.info("username={}, age={}", username, age);
+			return "ok";
+}
+```
+
+- `defaultValue`를 사용하면 파라미터에 값이 없는 경우 기본 값을 적용할 수 있다.
+    - 이미 기본값이 있기 때문에 `required` 는 의미가 없다.
+    - 파라미터 값이 빈 문자인 경우에도 설정한 기본값이 적용된다.
+        - 예) “/request-param-default?username=” → username = guest
+
+```java
+@ResponseBody
+@RequestMapping("/request-param-map")
+public String requestParamMap(@RequestParam Map<String, Object> paramMap) {
+		log.info("username={}, age={}", paramMap.get("username"), paramMap.get("age"));
+		return "ok";
+}
+```
+
+- 파라미터를 `Map`, `MultiValueMap`으로 조회할 수 있다.
+- 파라미터의 값이 1개가 확실하다면 `Map`을 사용해도 되지만 그렇지 않다면 `MultiValueMap` 사용
+
+요청 파라미터를 받아 필요한 객체를 만들고 그 객체에 값을 넣어주어야 하는데 이러한 과정을 `@ModelAttribute`가 자동화해준다.
+
+우선 요청 파라미터를 바인딩 받을 객체 클래스를 만들어준다.
+
+```java
+package hello.springmvc.basic;
+import lombok.Data;
+
+@Data
+public class MyData {
+		private String username;
+		private int age;
+}
+```
+
+- Lombok의 `@Data`
+    - `@Getter` , `@Setter` , `@ToString` , `@EqualsAndHashCode` , `@RequiredArgsConstructor` 를
+    자동으로 적용해준다.
+
+```java
+@ResponseBody
+@RequestMapping("/model-attribute-v1")
+public String modelAttributeV1(@ModelAttribute MyData myData) {
+		log.info("username={}, age={}", myData.getUsername(), myData.getAge());
+		return "ok";
+}
+```
+
+model.addAttribute(myData) 코드도 함께 자동 적용된다. → 뒤에 model에서 자세히 설명
+
+스프링 MVC는 `@ModelAttribute` 어노테이션이 있으면
+
+ 1. MyData  객체를 생성한다.
+
+1. 요청 파라미터의 이름으로 MyData  객체의 *property*를 찾고 해당 *property*의 setter를 호출하여 파라미터의 값을 입력(바인딩)한다.
+    - *property*란?
+        
+        객체에 getUsername() , setUsername() 메서드가 있으면, 이 객체는 username 이라는 프로퍼티를 가지고 있다.
+        username 프로퍼티의 값을 변경하면 setUsername() 이 호출되고, 조회하면 getUsername() 이 호출된다.
+        
+
+`@ModelAttribute` 은 `@RequestParam`과 마찬가지로 생략할 수 있는데 스프링은 생략시 다음과 같은 규칙을 적용한다.
+
+- String , int , Integer 같은 단순 타입은 `@RequestParam`
+- 나머지는 `@ModelAttribute` (argument resolver 로 지정해둔 타입은 제외
+
+**HTTP message body에 데이터를 직접 담아 요청**
+
+HTTP API에서 주로 사용하며 JSON, XML, TEXT가 있다.
+
+데이터 형식은 주로 JSON을 사용하며 POST, PUT, PATCH 방식이 있다.
+
+요청 파라미터와 다르게 HTTP message body를 통해 데이터가 직접 넘어오는 경우`@RequestParam` , `@ModelAttribute` 를 사용할 수 없다. (HTML Form 형식으로 전달되는 경우는 요청 파라미터로 인정)
+
+**단순 텍스트**
+
+```java
+@Slf4j
+@Controller
+public class RequestBodyStringController {
+
+@PostMapping("/request-body-string-v1")
+public void requestBodyString(HttpServletRequest request,HttpServletResponse response) throws IOException {
+			ServletInputStream inputStream = request.getInputStream();
+			String messageBody = StreamUtils.copyToString(inputStream, StandardCharsets.UTF_8);
+			log.info("messageBody={}", messageBody);
+			response.getWriter().write("ok");
+		}
+}
+```
+
+기본적으로 HTTP message body의 데이터를 `request.getInputStream()`를 통해 직접 읽을 수 있다.
+
+- `request.getInputStream()` : HTTP message body의 내용을 byte 코드로 반환한다.
+- byte 코드를 우리가 읽을 수 있는 문자(String)로 보기 위해 문자표(Charset) 지정해야 한다. 해당 코드에서는 UTF-8 Charset을 지정해주었다.
+
+```java
+@PostMapping("/request-body-string-v2")
+public void requestBodyStringV2(InputStream inputStream, Writer responseWriter) throws IOException {
+			String messageBody = StreamUtils.copyToString(inputStream, StandardCharsets.UTF_8);
+			log.info("messageBody={}", messageBody);
+			responseWriter.write("ok");
+}
+```
+
+- `InputStream`(Reader): HTTP 요청 메시지 바디의 내용을 직접 조회
+- `OutputStream`(Writer): HTTP 응답 메시지의 바디에 직접 결과 출력
+
+```java
+@PostMapping("/request-body-string-v3")
+public HttpEntity<String> requestBodyStringV3(HttpEntity<String> httpEntity) {
+			String messageBody = httpEntity.getBody();
+			log.info("messageBody={}", messageBody);
+			return new HttpEntity<>("ok");
+}
+```
+
+- `HttpEntity`
+    - HTTP header, body 정보를 편리하게 조회할 수 있다.
+    - 요청 파라미터를 조회하는 기능과 관계 없음(`@RequestParam`, `@ModelAttribute`)
+    - 응답에도 사용하며 메시지 바디 정보 직접 반환 가능하다.
+    - 스프링 MVC 내부에서 HTTP 메시지 바디를 읽어서 HTTP 메시지 컨버터(HttpMessageConverter)로 문자나 객체로 변환한다.
+    
+
+```java
+@ResponseBody
+@PostMapping("/request-body-string-v4")
+public String requestBodyStringV4(@RequestBody String messageBody) {
+			log.info("messageBody={}", messageBody);
+			return "ok";
+}
+```
+
+`@RequestBody` : HTTP 메시지 바디 정보를 편리하게 조회할 수 있다.
+
+- `@RequestHeader` : 헤더 정보 조회
+
+`@ResponseBody` : HTTP 메시지 바디에 응답 결과를 직접 담아 전달할 수 있다.
+
+**JSON**
+
+```java
+package hello.springmvc.basic.request;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import hello.springmvc.basic.HelloData;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Controller;
+import org.springframework.util.StreamUtils;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.ResponseBody;
+import javax.servlet.ServletInputStream;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+/**
+ * {"username":"hello", "age":20}
+ * content-type: application/json
+ */
+
+@Slf4j
+@Controller
+public class RequestBodyJsonController {
+private ObjectMapper objectMapper = new ObjectMapper();
+
+@PostMapping("/request-body-json-v1")
+public void requestBodyJsonV1(HttpServletRequest request, HttpServletResponse response) throws IOException {
+			ServletInputStream inputStream = request.getInputStream();
+			String messageBody = StreamUtils.copyToString(inputStream, StandardCharsets.UTF_8);
+			log.info("messageBody={}", messageBody);
+			HelloData data = objectMapper.readValue(messageBody, HelloData.class);
+			log.info("username={}, age={}", data.getUsername(), data.getAge());
+			response.getWriter().write("ok");
+		}
+}
+```
+
+- `request.getInputStream()` : `HttpServletRequest` 사용해서 직접 HTTP 메시지 바디에서 데이터를 읽어와 문자로 변환한다.
+- `objectMapper.readValue()` : 문자로 변환된 JSON 데이터를 Jackson 라이브러리인 `objectMapper` 를 사용해서 자바 객체로 변환한다.
+
+```java
+package hello.springmvc.basic;
+import lombok.Data;
+
+@Data
+public class MyData {
+		private String username;
+		private int age;
+}
+```
+
+```java
+@ResponseBody
+@PostMapping("/request-body-json-v2")
+public String requestBodyJsonV2(@RequestBody String messageBody) throws IOException {
+			MyData data = objectMapper.readValue(messageBody, MyData.class);
+			log.info("username={}, age={}", data.getUsername(), data.getAge());
+			return "ok";
+}
+```
+
+- `@RequestBody` : HTTP 메시지 바디에서 데이터를 읽어 매개변수에 저장한다.
+- 위의 방식과 동일하게 문자로 된 JSON 데이터를 Jackson 라이브러리인 `objectMapper`를 사용해서 자바 객체로 변환한다.
+    
+    → `@ModelAttribute`처럼 한번에 객체로 변환할 수 없을까?
+    
+
+```java
+@ResponseBody
+@PostMapping("/request-body-json-v3")
+public String requestBodyJsonV3(@RequestBody HelloData data) {
+			log.info("username={}, age={}", data.getUsername(), data.getAge());
+			return "ok";
+}
+```
+
+- `@RequestBody`에 직접 만든 객체를 지정할 수 있다.
+- `HttpEntity` , `@RequestBody` 를 사용하면 HTTP 메시지 컨버터가 HTTP 메시지 바디의 내용을 우리가 원하는 문자나 객체 등으로 변환해준다.
