@@ -722,4 +722,12 @@ HttpStatus.CREATED 로 변경하면 201 응답이 나가는 것을 확인할 수
 ### **HTTP 메시지 컨버터**
 
 뷰 템플릿으로 HTML을 생성해서 응답하는 것이 아니라, HTTP API처럼 JSON 데이터를 HTTP 메시지
-바디에서 직접 읽거나 쓰는 경우 HTTP 메시지 컨버터를 사용하면 편리하다.
+바디에서 직접 읽거나 쓰는 경우 HTTP 메시지 컨버터를 사용하면 편리하다.          
+                
+Spring MVC는 다음의 경우 HTTP 메시지 컨버터를 적용한다.
+
+- HTTP 요청 : `@RequestBody`, `HttpEntity(RequestEntity)`
+- HTTP 응답 : `@ResponseBody`, `HttpEntity(ResponseEntity)`
+    - `@ResponseBody` 사용 원리
+        - HTTP의 BODY에 문자 내용을 직접 반환한다.
+        - viewResolver대신 HttpMessageConverter가 동작한다.
